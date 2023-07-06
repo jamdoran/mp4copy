@@ -6,6 +6,12 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
+# Install rsync from HomeBrew
+brew cleanup -v
+brew update -v
+brew install rsync -v
+brew install python-tk@3.10 -v 
+
 
 #Add this command to ~/.zshrc
 # alias mp4copy='cd ~/Documents/Git/mp4copy && source .venv/bin/activate && python mp4copy.py'
