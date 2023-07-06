@@ -1,7 +1,20 @@
-import glob, os
+import os
 from tkinter import Tk, filedialog
 from datetime import datetime
 import sysrsync
+
+
+class colour:
+	PURPLE = '\033[95m'
+	CYAN = '\033[96m'
+	DARKCYAN = '\033[36m'
+	BLUE = '\033[94m'
+	GREEN = '\033[92m'
+	YELLOW = '\033[93m'
+	RED = '\033[91m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
+	END = '\033[0m'
 
 
 #Let user select a folder and return a clean path to that folder
@@ -50,6 +63,40 @@ def validateSource_and_Target(sourceFolder, destinationFolder):
         exit()
 
 
+# Copy the files using rsync
+# Just catch any error and exit
+# -a = archive (copy everything incl sub-folders)
+# -v = verbose
+# -I = Ignore time stamps and verify/copy everything
+# --exclusions .* = Do not copy hidden files or folders
+#  
+def copyFiles(sourceFolder, destinationFolder):
+    try:
+        sysrsync.run(source=f'{sourceFolder}',
+                    destination=f'{destinationFolder}',
+                    sync_source_contents=False, 
+                    options=['-avIP'],
+                    exclusions=['.*'] )
+
+    except:
+        print (f'{colour.RED}Something went wrong - files did NOT copy !!{colour.END}')
+        exit()
+
+
+
+# Run a second copy to verify the files were copied correctly - use checksum only, no dates
+#  
+def copyVerifyFiles(sourceFolder, destinationFolder):
+    try:
+        sysrsync.run(source=f'{sourceFolder}',
+                    destination=f'{destinationFolder}',
+                    sync_source_contents=False, 
+                    options=['-avhcP'],
+                    exclusions=['.*'] )
+
+    except:
+        print (f'{colour.RED}Something went wrong - files did NOT copy !!{colour.END}')
+        exit()
 
 
 # Yep, it's the main() function
@@ -66,20 +113,38 @@ def main():
 
     validateSource_and_Target(sourceFolder, destinationFolder)
 
-    sysrsync.run(source=f'{sourceFolder}',
-                destination=f'{destinationFolder}',
-                sync_source_contents=False)
+    print ()
+    print ( f'Source Folder : {sourceFolder}' )
+    print ( f'Dest Folder   : {destinationFolder}' )
+    print ()
+    print ()
 
-
-    print ( f'Source Folder is {sourceFolder}' )
-    print ( f'Destination Folder is {destinationFolder}' )
-
-    print( f'Complete in {datetime.now() - startTime } seconds' )
+    # Copy the files - exit() on failure
+    copyFiles(sourceFolder, destinationFolder)
     print()
+    print()
+    print( f'Copy Complete in {datetime.now() - startTime } seconds' )
+    print()
+    print()
+    print()
+
+    x = input('Hit enter to continue')
+
+    # Copy the files twice again for verification, use checksum only to compare files - exit() on failure
+    print(f'Starting second copy for checksum verification')
+    print()
+    print()
+    copyVerifyFiles(sourceFolder, destinationFolder)
+    print()
+    print(f'Starting third copy for checksum verification')
+    print()
+    print()
+    copyVerifyFiles(sourceFolder, destinationFolder)
+    print()
+    print()
+
     print('All Done!!')
     print()
-
-
 
 
 
