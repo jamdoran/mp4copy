@@ -14,7 +14,9 @@ brew install python@3.10 python-tk@3.10 -v
 
 
 #Add this command to ~/.zshrc
-# alias mp4copy='cd ~/Documents/Git/mp4copy && source .venv/bin/activate && python mp4copy.py'
+echo "alias mp4copy='cd ~/Documents/Git/mp4copy && source .venv/bin/activate && python mp4copy.py'" >> ~/.zshrc
+
+source ~/.zshrc
 
 
 
