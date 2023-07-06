@@ -10,13 +10,11 @@ python -m pip install -r requirements.txt
 brew cleanup -v
 brew update -v
 brew install rsync -v
-brew install python-tk@3.10 -v 
+brew install python@3.10 python-tk@3.10 -v 
 
 
 #Add this command to ~/.zshrc
 # alias mp4copy='cd ~/Documents/Git/mp4copy && source .venv/bin/activate && python mp4copy.py'
-# Must have tkinter instaled via brew
-# brew install python@3.10  python-tk@3.10 
 
 
 
