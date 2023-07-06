@@ -120,8 +120,6 @@ def main():
     print()
     print()
 
-    x = input('Hit enter to continue')
-
     # Copy the files twice again for verification, use checksum only to compare files - exit() on failure
     print(f'Starting second copy for checksum verification')
     print()
