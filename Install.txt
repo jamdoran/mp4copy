@@ -1,0 +1,20 @@
+
+
+cd Documents/Git
+git clone https://github.com/jamdoran/mp4copy
+
+cd mp4copy
+source setup.sh
+
+Wait for it to finish and close iTerm and reopen it.
+
+
+
+To use it :-
+
+Run mp4copy in terminal (iTerm)
+Select source folder when promoted
+Select copy destination when prompted
+Files will copy and verify twice
+
+
