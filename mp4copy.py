@@ -2,11 +2,33 @@ import os
 from tkinter import Tk, filedialog
 from datetime import datetime
 import sysrsync
+import subprocess
+import screen
 
 
-class colour:
-	RED = '\033[91m'
-	END = '\033[0m'
+# Get a list of non-hidden files in the root folder and all sub-folders
+def getFileList(sourceFolder):
+    subFolders = next(os.walk(sourceFolder))[1]
+    subFolders = [os.path.join(sourceFolder, f, '') for f in subFolders if not f.startswith('.')]
+    subFolders.insert(0,sourceFolder)
+
+    # Get all the non-hidden files in the root and all the sub-folders
+    allFiles = list()
+
+    for folder in subFolders:
+        print(f'{screen.colour.BLUE}Processing Folder: {folder} {screen.colour.END}')
+
+        # Get all the files in the folder (no super easy way to do a complex filter here so do it step-by-step
+        files = next(os.walk(folder))[2]
+        # Extract just the .mov and .avi files
+        files = [f for f in files if not f.lower().startswith('.')]
+        # Append the full path to the filename
+        files = [os.path.join(folder, f) for f in files]
+
+        allFiles = allFiles + files
+
+    return allFiles
+
 
 
 #Let user select a folder and return a clean path to that folder
@@ -62,8 +84,10 @@ def validateSource_and_Target(sourceFolder, destinationFolder):
 # -I = Ignore time stamps and verify/copy everything
 # --exclusions .* = Do not copy hidden files or folders
 #  
-def copyFiles(sourceFolder, destinationFolder):
+def copyFolder(sourceFolder, destinationFolder):
+
     try:
+        print()
         sysrsync.run(source=f'{sourceFolder}',
                     destination=f'{destinationFolder}',
                     sync_source_contents=False, 
@@ -71,24 +95,45 @@ def copyFiles(sourceFolder, destinationFolder):
                     exclusions=['.*'] )
 
     except:
-        print (f'{colour.RED}Something went wrong - files did NOT copy !!{colour.END}')
+        print (f'{screen.colour.RED}Something went wrong - files did NOT copy !!{screen.colour.END}')
         exit()
 
 
 
-# Run a second copy to verify the files were copied correctly - use checksum only, no dates
-#  
-def copyVerifyFiles(sourceFolder, destinationFolder):
-    try:
-        sysrsync.run(source=f'{sourceFolder}',
-                    destination=f'{destinationFolder}',
-                    sync_source_contents=False, 
-                    options=['-avhcP'],
-                    exclusions=['.*'] )
 
-    except:
-        print (f'{colour.RED}Something went wrong - files did NOT copy !!{colour.END}')
-        exit()
+def checkSumFiles(sourceFiles, sourceFolder, destFolder):
+    # Extract the name of the folder to be copied - this has to be added to the destination folder to get the full destination file path 
+    # e.g '/Users/jamdoran/Documents/Git/mp4copy/' will deliver mp4copy
+    # Then os.path.join to add the trailing /
+    folder = sourceFolder.split('/')[-2] + '/'
+
+    print ()
+    print ()
+    print (f'{screen.colour.UNDERLINE}Comparing copied files with shasum based checksum {screen.colour.END}')
+    print ()
+
+    for file in sourceFiles:
+        destFile = file.replace(sourceFolder, destFolder+folder)
+
+        result = subprocess.run(['shasum', f'{file}'], stdout=subprocess.PIPE)
+        sourceSHA = result.stdout.decode('utf-8').split(" ",1)[0]
+
+        result = subprocess.run(['shasum', f'{destFile}'], stdout=subprocess.PIPE)
+        destSHA = result.stdout.decode('utf-8').split(" ",1)[0]
+
+        print ()
+        print (f'Source File: {file}  (sha = {sourceSHA})')
+        print (f'Dest File  : {destFile}  (sha = {destSHA})')
+        if sourceSHA == destSHA:
+            print (f'{screen.colour.BLUE}Files Match{screen.colour.END}')
+        else:
+            print (f'{screen.colour.RED}Files DO NOT Match{screen.colour.END}')
+
+
+def clearScreen():
+    os.system('clear')
+
+
 
 
 # Yep, it's the main() function
@@ -97,43 +142,35 @@ def main():
     startTime   = datetime.now()
 
     # Let user select both source and destination folders for rsync 
-    print ( r'Select Source Folder' )
     sourceFolder        = getFolder()
-
-    print ( r'Select USB Root Folder' )
     destinationFolder   = getFolder()
 
+    # Do some basic checks on the source and dest folders 
     validateSource_and_Target(sourceFolder, destinationFolder)
 
+    clearScreen()
+    print (screen.logo)
+    print ()
     print ()
     print ( f'Source Folder : {sourceFolder}' )
     print ( f'Dest Folder   : {destinationFolder}' )
     print ()
-    print ()
 
-    # Copy the files - exit() on failure
-    copyFiles(sourceFolder, destinationFolder)
-    print()
-    print()
-    print( f'Copy Complete in {datetime.now() - startTime } seconds' )
-    print()
-    print()
-    print()
+    #Get a list of all the files in the sourceFolder and sub-folders with full path 
+    sourceFiles = getFileList(sourceFolder)
 
-    # Copy the files twice again for verification, use checksum only to compare files - exit() on failure
-    print(f'Starting second copy for checksum verification')
-    print()
-    print()
-    copyVerifyFiles(sourceFolder, destinationFolder)
-    print()
-    print(f'Starting third copy for checksum verification')
-    print()
-    print()
-    copyVerifyFiles(sourceFolder, destinationFolder)
-    print()
-    print()
+    # print()
+    # for f in sourceFiles:
+    #     print (f)
 
-    print('All Done!!')
+    # Copy the files with rsync - exit() on any failure
+    copyFolder(sourceFolder, destinationFolder)
+
+    # Checksum all the files 
+    checkSumFiles(sourceFiles, sourceFolder, destinationFolder)
+
+    print()
+    print( f'{screen.colour.BLUE}Complete in {datetime.now() - startTime } seconds !{screen.colour.END}' )
     print()
 
 
